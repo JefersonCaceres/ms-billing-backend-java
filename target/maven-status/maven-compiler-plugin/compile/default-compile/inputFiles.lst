@@ -1,0 +1,17 @@
+C:\proyecto-prueba\ms-billing-backend-java\src\main\java\com\castor\ms_billing_backend_java\application\dto\ClientDto.java
+C:\proyecto-prueba\ms-billing-backend-java\src\main\java\com\castor\ms_billing_backend_java\application\mapper\ClientMapper.java
+C:\proyecto-prueba\ms-billing-backend-java\src\main\java\com\castor\ms_billing_backend_java\application\service\ClientUseCaseImpl.java
+C:\proyecto-prueba\ms-billing-backend-java\src\main\java\com\castor\ms_billing_backend_java\domain\exception\ClientNotFoundException.java
+C:\proyecto-prueba\ms-billing-backend-java\src\main\java\com\castor\ms_billing_backend_java\domain\model\Client.java
+C:\proyecto-prueba\ms-billing-backend-java\src\main\java\com\castor\ms_billing_backend_java\domain\ports\in\ClientUseCase.java
+C:\proyecto-prueba\ms-billing-backend-java\src\main\java\com\castor\ms_billing_backend_java\domain\ports\out\ClientRepositoryPort.java
+C:\proyecto-prueba\ms-billing-backend-java\src\main\java\com\castor\ms_billing_backend_java\domain\ports\out\OracleClientRepositoryPort.java
+C:\proyecto-prueba\ms-billing-backend-java\src\main\java\com\castor\ms_billing_backend_java\infrastructure\adapter\db\ClientRepositoryAdapter.java
+C:\proyecto-prueba\ms-billing-backend-java\src\main\java\com\castor\ms_billing_backend_java\infrastructure\adapter\db\entity\ClientEntity.java
+C:\proyecto-prueba\ms-billing-backend-java\src\main\java\com\castor\ms_billing_backend_java\infrastructure\adapter\db\oracle\OracleClientRepositoryAdapter.java
+C:\proyecto-prueba\ms-billing-backend-java\src\main\java\com\castor\ms_billing_backend_java\infrastructure\configuration\OracleConfig.java
+C:\proyecto-prueba\ms-billing-backend-java\src\main\java\com\castor\ms_billing_backend_java\infrastructure\configuration\PostgresConfig.java
+C:\proyecto-prueba\ms-billing-backend-java\src\main\java\com\castor\ms_billing_backend_java\infrastructure\helper\ClientLogHelper.java
+C:\proyecto-prueba\ms-billing-backend-java\src\main\java\com\castor\ms_billing_backend_java\infrastructure\repository\ClientJpaRepository.java
+C:\proyecto-prueba\ms-billing-backend-java\src\main\java\com\castor\ms_billing_backend_java\MsBillingBackendJavaApplication.java
+C:\proyecto-prueba\ms-billing-backend-java\src\main\java\com\castor\ms_billing_backend_java\web\controller\ClientController.java
