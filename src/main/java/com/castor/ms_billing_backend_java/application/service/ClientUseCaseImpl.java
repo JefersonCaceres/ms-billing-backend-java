@@ -1,8 +1,14 @@
 package com.castor.ms_billing_backend_java.application.service;
 
+import com.castor.ms_billing_backend_java.application.request.InvoiceCalculationRequest;
+import com.castor.ms_billing_backend_java.application.response.InvoiceCalculationResponse;
 import com.castor.ms_billing_backend_java.domain.exception.ClientNotFoundException;
+import com.castor.ms_billing_backend_java.domain.model.BillingParameter;
 import com.castor.ms_billing_backend_java.domain.model.Client;
 import com.castor.ms_billing_backend_java.domain.ports.in.ClientUseCase;
+import com.castor.ms_billing_backend_java.domain.ports.in.OracleInvoicePort;
+import com.castor.ms_billing_backend_java.domain.ports.in.TaxServicePort;
+import com.castor.ms_billing_backend_java.domain.ports.out.BillingParameterRepositoryPort;
 import com.castor.ms_billing_backend_java.domain.ports.out.ClientRepositoryPort;
 import com.castor.ms_billing_backend_java.domain.ports.out.OracleClientRepositoryPort;
 import com.castor.ms_billing_backend_java.infrastructure.helper.ClientLogHelper;
@@ -11,6 +17,10 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.List;
+import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
@@ -18,6 +28,11 @@ public class ClientUseCaseImpl implements ClientUseCase {
     private final ClientRepositoryPort clientRepositoryPort;
     private final OracleClientRepositoryPort oraclePort;
     private final ClientLogHelper clientLogHelper;
+
+    private final BillingParameterRepositoryPort parameterPort;
+    private final TaxServicePort taxServicePort;
+    private final OracleInvoicePort oracleInvoicePort;
+
 
     @Override
     @Transactional
@@ -86,16 +101,18 @@ public class ClientUseCaseImpl implements ClientUseCase {
     }
 
     @Override
+    @Transactional
     public void deleteByDocument(String document) {
 
         Client existing = clientRepositoryPort.findByDocument(document)
                 .orElseThrow(() -> new ClientNotFoundException(document));
 
-        clientRepositoryPort.deleteByDocument(document);
+        existing.setActive(false);
+        clientRepositoryPort.save(existing);
         clientLogHelper.log(
                 existing.getId(),
                 "DELETE",
-                "Se elimina el cliente: " + existing.getDocument()
+                "Se elimina logicamente el cliente: " + existing.getDocument()
         );
 
         try {
@@ -106,8 +123,117 @@ public class ClientUseCaseImpl implements ClientUseCase {
                     false
             );
         } catch (Exception e) {
-            System.out.println("⚠ Error replicating delete to Oracle: " + e.getMessage());
+            System.out.println("Error replicating delete to Oracle: " + e.getMessage());
         }
     }
+
+        @Override
+        public InvoiceCalculationResponse createInvoice(
+                String document,
+                InvoiceCalculationRequest request) {
+
+            // 1) Buscar cliente en Postgres
+            Optional<Client> clientOpt = clientRepositoryPort.findByDocument(document);
+
+            boolean clientExists = clientOpt.isPresent();
+            boolean clientActive = clientExists && clientOpt.get().isActive();
+
+            Long clientId = clientExists ? clientOpt.get().getId() : null;
+
+            // 2) Calcular subtotal en Java
+            double subtotal = request.getItems().stream()
+                    .mapToDouble(i -> i.getQuantity() * i.getUnit_price())
+                    .sum();
+
+            // 3) Obtener parámetros desde PostgreSQL
+            List<BillingParameter> params = parameterPort.findActiveParameters();
+
+            // 4) Construir parámetros TAX
+            List<InvoiceCalculationRequest.Parameter> taxParams =
+                    params.stream()
+                            .filter(p -> p.getParamType().equalsIgnoreCase("TAX"))
+                            .map(p -> {
+                                InvoiceCalculationRequest.Parameter rp =
+                                        new InvoiceCalculationRequest.Parameter();
+                                rp.setParam_type("TAX");
+                                rp.setValue_percent(p.getValuePercent());
+                                return rp;
+                            }).toList();
+
+            // 5) Construir parámetros DISCOUNT SOLO si cliente activo
+            List<InvoiceCalculationRequest.Parameter> discountParams = new ArrayList<>();
+
+            if (clientActive) {
+                discountParams = params.stream()
+                        .filter(p -> p.getParamType().equalsIgnoreCase("DISCOUNT"))
+                        .filter(p -> p.getMinPurchase() != null && subtotal >= p.getMinPurchase())
+                        .max(Comparator.comparingDouble(p ->
+                                p.getValuePercent() != null ? p.getValuePercent() : 0.0))
+                        .map(p -> {
+                            InvoiceCalculationRequest.Parameter rp =
+                                    new InvoiceCalculationRequest.Parameter();
+                            rp.setParam_type("DISCOUNT");
+                            rp.setValue_percent(p.getValuePercent());
+                            return rp;
+                        })
+                        .map(List::of)
+                        .orElse(new ArrayList<>());
+            }
+
+            // 6) Preparar request final para Python
+            InvoiceCalculationRequest pythonReq = new InvoiceCalculationRequest();
+            pythonReq.setItems(request.getItems());
+
+            List<InvoiceCalculationRequest.Parameter> finalParams = new ArrayList<>();
+            finalParams.addAll(taxParams);
+            finalParams.addAll(discountParams);
+
+            pythonReq.setParameters(finalParams);
+
+            // 7) Llamar a Python
+            InvoiceCalculationResponse result = taxServicePort.calculate(pythonReq);
+
+            // 8) Si cliente NO existe o NO está activo → retornar factura parcial
+            if (!clientActive) {
+                return new InvoiceCalculationResponse(
+                        null,
+                        null,
+                        result.getSubtotal(),
+                        result.getTax(),
+                        0.0,
+                        result.getSubtotal() + result.getTax(),
+                        "Cliente no existe o está inactivo. Factura generada solo con impuestos."
+                );
+            }
+            clientLogHelper.log(
+                    clientId,
+                    "BILL",
+                    "Factura generada para el cliente: " + document +
+                            " | Subtotal: " + subtotal +
+                            " | Total: " + result.getTotal());
+
+
+            // 9) Crear factura en Oracle
+            Long invoiceId = oracleInvoicePort.createInvoice(
+                    clientId,
+                    result.getSubtotal(),
+                    result.getTax(),
+                    result.getDiscount(),
+                    result.getTotal()
+            );
+
+            // 10) Retornar factura final
+            return new InvoiceCalculationResponse(
+                    invoiceId,
+                    clientId,
+                    result.getSubtotal(),
+                    result.getTax(),
+                    result.getDiscount(),
+                    result.getTotal(),
+                    "Factura generada correctamente."
+            );
+        }
+
+
 
 }

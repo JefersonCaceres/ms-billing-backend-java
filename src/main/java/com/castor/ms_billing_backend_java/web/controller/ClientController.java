@@ -2,6 +2,8 @@ package com.castor.ms_billing_backend_java.web.controller;
 
 import com.castor.ms_billing_backend_java.application.dto.ClientDto;
 import com.castor.ms_billing_backend_java.application.mapper.ClientMapper;
+import com.castor.ms_billing_backend_java.application.request.InvoiceCalculationRequest;
+import com.castor.ms_billing_backend_java.application.response.InvoiceCalculationResponse;
 import com.castor.ms_billing_backend_java.domain.model.Client;
 import com.castor.ms_billing_backend_java.domain.ports.in.ClientUseCase;
 import org.springframework.http.ResponseEntity;
@@ -17,20 +19,20 @@ public class ClientController {
         this.clientUseCase = clientUseCase;
     }
 
-    @PostMapping
+    @PostMapping("/create")
     public ResponseEntity<ClientDto> create(@RequestBody ClientDto dto) {
         Client client = ClientMapper.toDomain(dto);
         Client saved = clientUseCase.create(client);
         return ResponseEntity.ok(ClientMapper.toDto(saved));
     }
 
-    @GetMapping("/{document}")
+    @GetMapping("/get/{document}")
     public ResponseEntity<ClientDto> getByDocument(@PathVariable String document) {
         Client client = clientUseCase.findByDocument(document);
         return ResponseEntity.ok(ClientMapper.toDto(client));
     }
 
-    @PutMapping("/{document}")
+    @PutMapping("update/{document}")
     public ResponseEntity<ClientDto> update(
             @PathVariable String document,
             @RequestBody ClientDto dto
@@ -40,9 +42,17 @@ public class ClientController {
         return ResponseEntity.ok(ClientMapper.toDto(updated));
     }
 
-    @DeleteMapping("/{document}")
+    @DeleteMapping("delete/{document}")
     public ResponseEntity<Void> delete(@PathVariable String document) {
         clientUseCase.deleteByDocument(document);
         return ResponseEntity.noContent().build();
+    }
+
+    @PostMapping("/bill/{document}")
+    public ResponseEntity<InvoiceCalculationResponse> create(
+            @PathVariable String document,
+            @RequestBody InvoiceCalculationRequest request) {
+
+        return ResponseEntity.ok(clientUseCase.createInvoice(document, request));
     }
 }
