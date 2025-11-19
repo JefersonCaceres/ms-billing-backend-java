@@ -14,13 +14,13 @@ public class InvoiceCalculationRequest {
     public static class Item {
         private String description;
         private Integer quantity;
-        private Double unit_price;
+        private Double unitPrice;
     }
 
     @Data
     public static class Parameter {
-        private String param_type; // TAX or DISCOUNT
-        private Double value_percent;
+        private String paramType; // TAX or DISCOUNT
+        private Double valuePercent;
     }
 }
 

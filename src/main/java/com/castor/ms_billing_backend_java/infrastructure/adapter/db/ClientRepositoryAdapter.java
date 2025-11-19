@@ -4,15 +4,18 @@ import com.castor.ms_billing_backend_java.domain.model.Client;
 import com.castor.ms_billing_backend_java.domain.ports.out.ClientRepositoryPort;
 import com.castor.ms_billing_backend_java.infrastructure.adapter.db.entity.ClientEntity;
 import com.castor.ms_billing_backend_java.infrastructure.repository.ClientJpaRepository;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import java.util.Optional;
 
 @Component
 public class ClientRepositoryAdapter implements ClientRepositoryPort {
-    @Autowired
-    private  ClientJpaRepository clientJpaRepository;
+
+    private final  ClientJpaRepository clientJpaRepository;
+
+    public ClientRepositoryAdapter(ClientJpaRepository clientJpaRepository) {
+        this.clientJpaRepository = clientJpaRepository;
+    }
 
     @Override
     public Client save(Client client) {

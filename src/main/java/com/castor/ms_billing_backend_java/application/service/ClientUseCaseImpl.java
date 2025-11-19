@@ -13,6 +13,7 @@ import com.castor.ms_billing_backend_java.domain.ports.out.ClientRepositoryPort;
 import com.castor.ms_billing_backend_java.domain.ports.out.OracleClientRepositoryPort;
 import com.castor.ms_billing_backend_java.infrastructure.helper.ClientLogHelper;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -22,6 +23,7 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class ClientUseCaseImpl implements ClientUseCase {
@@ -55,7 +57,7 @@ public class ClientUseCaseImpl implements ClientUseCase {
                     saved.isActive()
             );
         } catch (Exception e) {
-            System.out.println("⚠ Error replicating client to Oracle: " + e.getMessage());
+            log.info("⚠ Error replicating client to Oracle: " + e.getMessage());
         }
 
         return saved;
@@ -88,7 +90,7 @@ public class ClientUseCaseImpl implements ClientUseCase {
                     updated.isActive()
             );
         } catch (Exception e) {
-            System.out.println("Error replicating update to Oracle: " + e.getMessage());
+            log.info("Error replicating update to Oracle: " + e.getMessage());
         }
 
         return updated;
@@ -123,7 +125,7 @@ public class ClientUseCaseImpl implements ClientUseCase {
                     false
             );
         } catch (Exception e) {
-            System.out.println("Error replicating delete to Oracle: " + e.getMessage());
+            log.info("Error replicating delete to Oracle: " + e.getMessage());
         }
     }
 
@@ -142,7 +144,7 @@ public class ClientUseCaseImpl implements ClientUseCase {
 
             // 2) Calcular subtotal en Java
             double subtotal = request.getItems().stream()
-                    .mapToDouble(i -> i.getQuantity() * i.getUnit_price())
+                    .mapToDouble(i -> i.getQuantity() * i.getUnitPrice())
                     .sum();
 
             // 3) Obtener parámetros desde PostgreSQL
@@ -155,8 +157,8 @@ public class ClientUseCaseImpl implements ClientUseCase {
                             .map(p -> {
                                 InvoiceCalculationRequest.Parameter rp =
                                         new InvoiceCalculationRequest.Parameter();
-                                rp.setParam_type("TAX");
-                                rp.setValue_percent(p.getValuePercent());
+                                rp.setParamType("TAX");
+                                rp.setValuePercent(p.getValuePercent());
                                 return rp;
                             }).toList();
 
@@ -172,8 +174,8 @@ public class ClientUseCaseImpl implements ClientUseCase {
                         .map(p -> {
                             InvoiceCalculationRequest.Parameter rp =
                                     new InvoiceCalculationRequest.Parameter();
-                            rp.setParam_type("DISCOUNT");
-                            rp.setValue_percent(p.getValuePercent());
+                            rp.setParamType("DISCOUNT");
+                            rp.setValuePercent(p.getValuePercent());
                             return rp;
                         })
                         .map(List::of)

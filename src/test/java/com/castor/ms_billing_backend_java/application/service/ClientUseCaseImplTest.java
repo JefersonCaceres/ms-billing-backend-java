@@ -1,6 +1,5 @@
 package com.castor.ms_billing_backend_java.application.service;
 
-import com.castor.ms_billing_backend_java.application.mapper.ClientMapper;
 import com.castor.ms_billing_backend_java.application.request.InvoiceCalculationRequest;
 import com.castor.ms_billing_backend_java.application.response.InvoiceCalculationResponse;
 import com.castor.ms_billing_backend_java.domain.exception.ClientNotFoundException;
@@ -12,12 +11,10 @@ import com.castor.ms_billing_backend_java.domain.ports.out.BillingParameterRepos
 import com.castor.ms_billing_backend_java.domain.ports.out.ClientRepositoryPort;
 import com.castor.ms_billing_backend_java.domain.ports.out.OracleClientRepositoryPort;
 import com.castor.ms_billing_backend_java.infrastructure.helper.ClientLogHelper;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.util.List;
@@ -130,8 +127,12 @@ class ClientUseCaseImplTest {
     @Test
     void update_shouldThrowExceptionWhenNotFound() {
         when(postgresPort.findByDocument("123")).thenReturn(Optional.empty());
-        assertThrows(ClientNotFoundException.class, () -> useCase.update("123", new Client()));
+        Client client = new Client();
+        assertThrows(ClientNotFoundException.class,
+                () -> useCase.update("123", client)
+        );
     }
+
     @Test
     void delete_shouldDeleteAndSoftDeleteOracle() {
 
@@ -163,10 +164,10 @@ class ClientUseCaseImplTest {
 
         // 🔵 Replicación en Oracle
         verify(oraclePort).updateClient(
-                eq(1L),
-                eq("User"),
-                eq("u@mail.com"),
-                eq(false)
+                1L,
+                "User",
+                "u@mail.com",
+                false
         );
     }
 
@@ -240,7 +241,7 @@ class ClientUseCaseImplTest {
         InvoiceCalculationRequest.Item item = new InvoiceCalculationRequest.Item();
         item.setDescription("Prod1");
         item.setQuantity(2);
-        item.setUnit_price(100000.0);
+        item.setUnitPrice(100000.0);
 
         req.setItems(List.of(item));
 
@@ -257,11 +258,11 @@ class ClientUseCaseImplTest {
 
         // MOCK ORACLE
         when(oracleInvoicePort.createInvoice(
-                eq(1L),
-                eq(200000.0),
-                eq(38000.0),
-                eq(20000.0),
-                eq(218000.0)
+                1L,
+                200000.0,
+                38000.0,
+                20000.0,
+                218000.0
         )).thenReturn(55L);
         //  EXECUTE
         InvoiceCalculationResponse resp =
@@ -284,11 +285,6 @@ class ClientUseCaseImplTest {
         verify(taxServicePort, times(1)).calculate(any());
         //  VERIFY ORACLE
         verify(oracleInvoicePort, times(1)).createInvoice(
-                eq(1L),
-                eq(200000.0),
-                eq(38000.0),
-                eq(20000.0),
-                eq(218000.0)
-        );
+                1L,200000.0,38000.0,20000.0,218000.0);
     }
 }
