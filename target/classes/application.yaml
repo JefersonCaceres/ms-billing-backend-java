@@ -1,0 +1,24 @@
+server:
+  port: 8080
+  profiles:
+    active: dev
+
+spring:
+  datasource:
+    url: jdbc:postgresql://postgres-service:5432/billingdb
+    username: billing_user
+    password: psw123456
+    driver-class-name: org.postgresql.Driver
+
+  jpa:
+    database-platform: org.hibernate.dialect.PostgreSQLDialect
+    show-sql: true
+    hibernate:
+      ddl-auto: none
+
+oracle:
+  datasource:
+    url: jdbc:oracle:thin:@oracle-service:1521/XEPDB1
+    username: billing
+    password: pws654321
+    driver-class-name: oracle.jdbc.OracleDriver
