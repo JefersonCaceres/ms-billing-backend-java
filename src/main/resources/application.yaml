@@ -1,0 +1,28 @@
+server:
+  port: 8080
+
+spring:
+  profiles:
+    active: dev
+
+  datasource:
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://postgres-service:5432/billingdb}
+    username: ${SPRING_DATASOURCE_USERNAME:billing_user}
+    password: ${SPRING_DATASOURCE_PASSWORD:psw123456}
+    driver-class-name: org.postgresql.Driver
+
+  jpa:
+    database-platform: org.hibernate.dialect.PostgreSQLDialect
+    show-sql: true
+    hibernate:
+      ddl-auto: none
+
+oracle:
+  datasource:
+    url: ${ORACLE_DATASOURCE_URL:jdbc:oracle:thin:@oracle-service:1521/XEPDB1}
+    username: ${ORACLE_DATASOURCE_USERNAME:billing}
+    password: ${ORACLE_DATASOURCE_PASSWORD:pws654321}
+    driver-class-name: oracle.jdbc.OracleDriver
+
+tax-service:
+  base-url: ${TAX_SERVICE_BASE_URL:http://python-service:8000}
