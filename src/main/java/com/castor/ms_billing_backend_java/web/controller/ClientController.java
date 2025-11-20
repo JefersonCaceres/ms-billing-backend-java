@@ -52,7 +52,6 @@ public class ClientController {
     public ResponseEntity<InvoiceCalculationResponse> create(
             @PathVariable String document,
             @RequestBody InvoiceCalculationRequest request) {
-
         return ResponseEntity.ok(clientUseCase.createInvoice(document, request));
     }
 }

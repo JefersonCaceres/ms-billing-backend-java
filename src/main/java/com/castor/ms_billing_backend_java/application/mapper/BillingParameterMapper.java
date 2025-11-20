@@ -5,8 +5,7 @@ import com.castor.ms_billing_backend_java.infrastructure.adapter.db.entity.Billi
 
 public final class BillingParameterMapper {
 
-    private BillingParameterMapper() {
-    }
+    private BillingParameterMapper(){}
 
     public static BillingParameter toDomain(BillingParameterEntity e) {
         return new BillingParameter(

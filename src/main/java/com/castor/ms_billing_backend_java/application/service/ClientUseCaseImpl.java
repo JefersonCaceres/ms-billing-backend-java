@@ -134,7 +134,7 @@ public class ClientUseCaseImpl implements ClientUseCase {
                 String document,
                 InvoiceCalculationRequest request) {
 
-            // 1) Buscar cliente en Postgres
+            // Buscar cliente en Postgres
             Optional<Client> clientOpt = clientRepositoryPort.findByDocument(document);
 
             boolean clientExists = clientOpt.isPresent();
@@ -142,15 +142,15 @@ public class ClientUseCaseImpl implements ClientUseCase {
 
             Long clientId = clientExists ? clientOpt.get().getId() : null;
 
-            // 2) Calcular subtotal en Java
+            //Calcular subtotal en Java
             double subtotal = request.getItems().stream()
                     .mapToDouble(i -> i.getQuantity() * i.getUnitPrice())
                     .sum();
 
-            // 3) Obtener parámetros desde PostgreSQL
+            // Obtener parámetros desde PostgreSQL
             List<BillingParameter> params = parameterPort.findActiveParameters();
 
-            // 4) Construir parámetros TAX
+            //Construir parámetros TAX
             List<InvoiceCalculationRequest.Parameter> taxParams =
                     params.stream()
                             .filter(p -> p.getParamType().equalsIgnoreCase("TAX"))
@@ -162,7 +162,7 @@ public class ClientUseCaseImpl implements ClientUseCase {
                                 return rp;
                             }).toList();
 
-            // 5) Construir parámetros DISCOUNT SOLO si cliente activo
+            //Construir parámetros DISCOUNT SOLO si cliente activo
             List<InvoiceCalculationRequest.Parameter> discountParams = new ArrayList<>();
 
             if (clientActive) {
@@ -182,7 +182,7 @@ public class ClientUseCaseImpl implements ClientUseCase {
                         .orElse(new ArrayList<>());
             }
 
-            // 6) Preparar request final para Python
+            // Preparar request final para Python
             InvoiceCalculationRequest pythonReq = new InvoiceCalculationRequest();
             pythonReq.setItems(request.getItems());
 
@@ -192,10 +192,10 @@ public class ClientUseCaseImpl implements ClientUseCase {
 
             pythonReq.setParameters(finalParams);
 
-            // 7) Llamar a Python
+            // Llamar a Python
             InvoiceCalculationResponse result = taxServicePort.calculate(pythonReq);
 
-            // 8) Si cliente NO existe o NO está activo → retornar factura parcial
+            // Si cliente NO existe o NO está activo → retornar factura parcial
             if (!clientActive) {
                 return new InvoiceCalculationResponse(
                         null,
@@ -215,7 +215,7 @@ public class ClientUseCaseImpl implements ClientUseCase {
                             " | Total: " + result.getTotal());
 
 
-            // 9) Crear factura en Oracle
+            // Crear factura en Oracle
             Long invoiceId = oracleInvoicePort.createInvoice(
                     clientId,
                     result.getSubtotal(),
@@ -224,7 +224,7 @@ public class ClientUseCaseImpl implements ClientUseCase {
                     result.getTotal()
             );
 
-            // 10) Retornar factura final
+            // Retornar factura final
             return new InvoiceCalculationResponse(
                     invoiceId,
                     clientId,
